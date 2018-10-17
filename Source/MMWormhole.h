@@ -148,6 +148,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)passMessageObject:(nullable id <NSCoding>)messageObject
 			   identifier:(nullable NSString *)identifier;
 
+
+-(NSArray *)allMessageIdentifiers;
+
 /**
  This method returns the value of a message with a specific identifier as an object.
  
