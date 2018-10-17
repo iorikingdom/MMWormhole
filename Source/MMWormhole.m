@@ -55,6 +55,30 @@ void wormholeNotificationCallback(CFNotificationCenterRef center,
 }
 
 #pragma clang diagnostic pop
+-(NSArray *)allMessageIdentifiers
+{
+    NSMutableArray *array = [NSMutableArray array];
+    if(self.wormholeMessenger && [self.wormholeMessenger isKindOfClass:[MMWormholeFileTransiting class]])
+    {
+        MMWormholeFileTransiting *fileTransiting = self.wormholeMessenger;
+        NSString *directoryPath = [fileTransiting messagePassingDirectoryPath];
+        
+        NSDirectoryEnumerator *enumerator = [[NSFileManager defaultManager] enumeratorAtPath:directoryPath];
+        
+        NSString *filePath;
+        while (filePath = [enumerator nextObject]) {
+            NSString *fullPath = [directoryPath stringByAppendingPathComponent:filePath];
+            NSString *identifier = [[fullPath lastPathComponent] stringByDeletingPathExtension];
+            
+            if(identifier)
+            {
+                [array addObject:identifier];
+            }
+        }
+    }
+    
+    return array;
+}
 
 - (instancetype)initWithApplicationGroupIdentifier:(nullable NSString *)identifier
                                  optionalDirectory:(nullable NSString *)directory {
@@ -67,7 +91,7 @@ void wormholeNotificationCallback(CFNotificationCenterRef center,
         
         self.wormholeMessenger = [[MMWormholeFileTransiting alloc] initWithApplicationGroupIdentifier:[identifier copy]
                                                                                     optionalDirectory:[directory copy]];
-
+        
         _listenerBlocks = [NSMutableDictionary dictionary];
         
         // Only respects notification coming from self.
@@ -159,10 +183,10 @@ void wormholeNotificationCallback(CFNotificationCenterRef center,
 }
 
 void wormholeNotificationCallback(CFNotificationCenterRef center,
-                               void * observer,
-                               CFStringRef name,
-                               void const * object,
-                               CFDictionaryRef userInfo) {
+                                  void * observer,
+                                  CFStringRef name,
+                                  void const * object,
+                                  CFDictionaryRef userInfo) {
     NSString *identifier = (__bridge NSString *)name;
     NSObject *sender = (__bridge NSObject *)(observer);
     [[NSNotificationCenter defaultCenter] postNotificationName:MMWormholeNotificationName
@@ -176,7 +200,7 @@ void wormholeNotificationCallback(CFNotificationCenterRef center,
     
     if (identifier != nil) {
         id messageObject = [self.wormholeMessenger messageObjectForIdentifier:identifier];
-
+        
         [self notifyListenerForMessageWithIdentifier:identifier message:messageObject];
     }
 }
@@ -187,7 +211,7 @@ void wormholeNotificationCallback(CFNotificationCenterRef center,
 
 - (void)notifyListenerForMessageWithIdentifier:(nullable NSString *)identifier message:(nullable id<NSCoding>)message {
     typedef void (^MessageListenerBlock)(id messageObject);
-
+    
     MessageListenerBlock listenerBlock = [self listenerBlockForIdentifier:identifier];
     
     if (listenerBlock) {
